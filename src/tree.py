@@ -1,5 +1,6 @@
 import copy
-from itertools import permutations, combinations
+from itertools import combinations, permutations
+
 
 class Node:
     def __init__(self, name, content=[], parent=None):
@@ -17,7 +18,7 @@ class Node:
     def set_depth(self, d):
         self.depth = d
         for c in self.children:
-            c.set_depth(d+1)
+            c.set_depth(d + 1)
 
     def get_node(self, name):
         return next((n for n in self.descendants if n.name == name), None)
@@ -46,11 +47,13 @@ class Node:
             self.parent.is_leaf = len(self.parent.children) > 0
             self.parent = None
         self.depth = 0
-        
+
     # attach a parentless node to a new parent
     def attach(self, node):
         if self.parent is not None:
-            raise Exception("Can not attach a node that already has a parent. forgot to prune() ?")
+            raise Exception(
+                "Can not attach a node that already has a parent. forgot to prune() ?"
+            )
         self.parent = node
         self.parent.children.append(self)
         self.parent.add_descendants(self.descendants)
@@ -83,19 +86,31 @@ class Node:
         indend = "  " * level
         print(f"{indend}{self.name}")
         for c in self.children:
-            c.print_tree(level+1)
-            
+            c.print_tree(level + 1)
+
+    def postorder(self):
+        f = [self]
+        s = []
+        while len(f) > 0:
+            current_node = f.pop()
+            s.append(current_node)
+            for c in current_node.children:
+                f.append(c)
+        s.reverse()
+        return s
+
+
 # Tell wether two trees are isomorphic
 def isomorphic(T1, T2):
     if len(T1.children) != len(T1.children):
         return False
     if len(T1.descendants) != len(T2.descendants):
-        return False 
-    
+        return False
+
     n_child = len(T1.children)
     if n_child == 0:
         return True
-    
+
     for t1_children in permutations(T1.children):
         all_match = True
         for i in range(n_child):
@@ -107,11 +122,14 @@ def isomorphic(T1, T2):
 
     return False
 
+
 # Generate all trees shape from k_min to k_max nodes and yield them per size
 # Based on procedure RootedTree from https://dl.acm.org/doi/10.1145/1125994.1125995
 def generate_trees(k_min, k_max):
-    current_node = 1        # current node being generated
-    current_trees = []      # contains <current_node> nodes trees generated after each iteration
+    current_node = 1  # current node being generated
+    current_trees = (
+        []
+    )  # contains <current_node> nodes trees generated after each iteration
 
     # first tree with only one node
     base = Node(current_node)
@@ -125,23 +143,28 @@ def generate_trees(k_min, k_max):
         while current_trees[0].size() == current_node:
             tree = current_trees.pop(0)
             node = tree.get_node(current_node)
-            
+
             # generate all possible trees of <current_node + 1> node from <tree>
             while node is not None:
                 new_tree = tree.deep_copy()
                 new_node = Node(current_node + 1, parent=new_tree.get_node(node.name))
 
                 # check that the tree has not already been added
-                if any(isomorphic(new_tree, t) for t in current_trees if t.size() == current_node + 1):
+                if any(
+                    isomorphic(new_tree, t)
+                    for t in current_trees
+                    if t.size() == current_node + 1
+                ):
                     node = node.parent
                     continue
 
                 current_trees.append(new_tree)
                 node = node.parent
-           
-        current_node += 1  
-    
+
+        current_node += 1
+
     yield current_trees
+
 
 def label(parent, node, labels):
     grouped_children = []
@@ -153,6 +176,7 @@ def label(parent, node, labels):
 
     sizes = [sum(g.size() for g in gc) for gc in grouped_children]
 
+
 def sized_partitions(data, sizes):
     assert len(data) == sum(sizes)
 
@@ -161,13 +185,14 @@ def sized_partitions(data, sizes):
 
     for comb in combinations(data, sizes[0]):
         remaining = list(set(data).difference(set(comb)))
-        for remaining_part in sized_partitions(remaining, sizes[1:] if len(sizes) > 1 else []):
-            yield [comb] + remaining_part 
-        
+        for remaining_part in sized_partitions(
+            remaining, sizes[1:] if len(sizes) > 1 else []
+        ):
+            yield [comb] + remaining_part
 
-for p in sized_partitions([1, 2, 3, 4], [1, 3]):
-    print(p)
 
+# for p in sized_partitions([1, 2, 3, 4], [1, 3]):
+#     print(p)
 
 
 """
@@ -178,7 +203,7 @@ for i, batch in enumerate(get_trees(1, 5)):
     for t in batch:
         print()
         t.print_tree()
-"""      
+"""
 
 """
 root_1 = Node(10)
