@@ -1,84 +1,111 @@
-from copy import deepcopy
+from itertools import product
 
-import numpy as np
 from scipy import sparse
+from treelib.node import Node
+from treelib.tree import Tree
 
-from tree import Node
+from utils import SubCloneData, newick_to_tree
 
 
-def compute_fd(tree: Node, freqs: dict):
-    """Return fd values as a sparse array
-    - tree: the root of the tree, each node name must be an integer from
-        0 to tree.size() - 1
-    - freqs: frequency of each node in a dict, with key being node name.
+def cumuled_freqs(tree: Tree) -> None:
+    """Compute cumuled frequency on each node,
+    The value is attached to node data in place.
     """
-    freqs_cum = deepcopy(freqs)
+    for n_id in reversed(list(tree.expand_tree(mode=Tree.WIDTH))):
+        node = tree[n_id]
+        node.data.cumuled_freq = node.data.freq
+        node.data.cumuled_freq = sum(
+            [c.data.cumuled_freq for c in tree.children(n_id)], 0
+        )
+
+
+def node_frequency_diff(tree: Tree) -> sparse.lil_matrix:
+    """Compute frequency difference rate between nodes,
+    Value is returned as a sparse matrix.
+    """
     fd = sparse.lil_matrix((tree.size(), tree.size()))
 
-    for n in tree.postorder():
-        for c in n.children:
-            freqs_cum[n.name] += freqs_cum[c.name]
-
-    print("CUMULED FREQUENCIES\n")
-    print(freqs_cum)
-    print()
-
-    s = [tree]
-    marked = {n.name: False for n in tree.descendants}
+    s = [str(tree.root)]
+    marked = {n.identifier: False for n in tree.all_nodes_itr()}
     while len(s) > 0:
-        n = s[-1]
-        unmarked = next((c for c in n.children if not marked[c.name]), None)
-        if unmarked:
-            fd[n.name, unmarked.name] = freqs_cum[unmarked.name] / freqs_cum[n.name]
-            for ancestor in s[:-1]:
-                fd[ancestor.name, unmarked.name] = (
-                    freqs_cum[unmarked.name] / freqs_cum[ancestor.name]
-                )
-            marked[unmarked.name] = True
-            s.append(unmarked)
+        # find the next child to compute
+        n_id = s[-1]
+        c_id = next(
+            (c.identifier for c in tree.children(n_id) if not marked[c.identifier]),
+            None,
+        )
+
+        # compute all frequency difference for c
+        if c_id is not None:
+            c_freq = tree[c_id].data.cumuled_freq
+            # all ancestor of c or in the stack
+            for a_id in s:
+                a_freq = tree[a_id].data.cumuled_freq
+                fd[int(a_id), int(c_id)] = c_freq / a_freq
+
+            # mark c and put it on the stack to compute its children frequency diffs
+            marked[c_id] = True
+            s.append(c_id)
+
+        # all children of n were already computed so discard it
         else:
             s.pop()
 
     return fd
 
 
-def afd(fd1, fd2):
-    fd1_coo = fd1.tocoo()
-    fd2_coo = fd2.tocoo()
+def mut_frequency_diff(tree: Tree, muts_map: dict) -> sparse.lil_matrix:
+    """Compute frequency difference rate between mutations
+    Value is returned as a sparse matrix.
+    muts_map map each mutation to an integer from 0 to m-1
+    """
+    nfd = node_frequency_diff(tree)
+    m = len(muts_map)
+    mfd = sparse.lil_matrix((m, m))
 
-    coords1 = set(zip(fd1_coo.row, fd1_coo.col))
-    coords2 = set(zip(fd2_coo.row, fd2_coo.col))
-    all_coords = coords1 | coords2
+    for i, j in zip(*nfd.nonzero()):
+        val = nfd[i, j]
+        for m_i, m_j in product(tree[str(i)].data.muts, tree[str(j)].data.muts):
+            idx_i, idx_j = muts_map[m_i], muts_map[m_j]
+            mfd[idx_i, idx_j] = val
 
-    afd = 0
-    for row, col in all_coords:
-        val1 = fd1[row, col]
-        val2 = fd2[row, col]
-        afd += abs(val1 - val2)
+    return mfd
 
 
-n0 = Node(0)
-n1 = Node(1, parent=n0)
-n2 = Node(2, parent=n1)
-n3 = Node(3, parent=n2)
-n4 = Node(4, parent=n2)
-n5 = Node(5, parent=n1)
-n6 = Node(6, parent=n5)
+def fd_diff(fd1: sparse.lil_matrix, fd2: sparse.lil_matrix) -> float:
+    diff = 0
 
-f = {0: 1, 1: 2, 2: 2, 3: 5, 4: 2, 5: 1, 6: 7}
+    coords1 = set(zip(*fd1.nonzero()))
+    coords2 = set(zip(*fd2.nonzero()))
+    all_coords = coords1.union(coords2)
 
-print("INITIAL TREE\n")
-n0.print_tree()
-print()
-print(n0.size())
+    for i, j in sorted(all_coords):
+        val1 = float(fd1[i, j])
+        val2 = float(fd2[i, j])
+        if val1 == 0 or val2 == 0:
+            diff += 1.0
+        else:
+            diff += abs(val1 - val2)
 
-print("PER NODE FREQUENCY\n")
-print(f)
-print()
+    return diff
 
-fd = compute_fd(n0, f)
-print("FREQUENCY DIFFERENCE\n")
-for i in range(0, 7):
-    for j in range(0, 7):
-        if fd[i, j] != 0:
-            print(f"FD({i},{j}) = {fd[i,j]}")
+
+def afd(input1: Tree | str, input2: Tree | str):
+    if type(input1) == str:
+        tree1 = newick_to_tree(input1)
+    else:
+        tree1 = Tree(input1)
+
+    if type(input2) == str:
+        tree2 = newick_to_tree(input2)
+    else:
+        tree2 = Tree(input2)
+
+    all_muts = sum([tree1[n_id].data.muts for n_id in tree1.all_nodes_itr()], [])
+    all_muts += sum([tree2[n_id].data.muts for n_id in tree2.all_nodes_itr()], [])
+    muts_map = {m: i for i, m in enumerate(set(all_muts))}
+
+    fd1 = mut_frequency_diff(tree1, muts_map)
+    fd2 = mut_frequency_diff(tree2, muts_map)
+
+    return fd_diff(fd1, fd2)
