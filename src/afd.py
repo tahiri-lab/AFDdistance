@@ -7,14 +7,14 @@ from treelib.tree import Tree
 from utils import SubCloneData, newick_to_tree
 
 
-def cumuled_freqs(tree: Tree) -> None:
+def compute_cumuled_freqs(tree: Tree) -> None:
     """Compute cumuled frequency on each node,
     The value is attached to node data in place.
     """
     for n_id in reversed(list(tree.expand_tree(mode=Tree.WIDTH))):
         node = tree[n_id]
         node.data.cumuled_freq = node.data.freq
-        node.data.cumuled_freq = sum(
+        node.data.cumuled_freq += sum(
             [c.data.cumuled_freq for c in tree.children(n_id)], 0
         )
 
@@ -23,6 +23,7 @@ def node_frequency_diff(tree: Tree) -> sparse.lil_matrix:
     """Compute frequency difference rate between nodes,
     Value is returned as a sparse matrix.
     """
+    compute_cumuled_freqs(tree)
     fd = sparse.lil_matrix((tree.size(), tree.size()))
 
     s = [str(tree.root)]
@@ -101,8 +102,8 @@ def afd(input1: Tree | str, input2: Tree | str):
     else:
         tree2 = Tree(input2)
 
-    all_muts = sum([tree1[n_id].data.muts for n_id in tree1.all_nodes_itr()], [])
-    all_muts += sum([tree2[n_id].data.muts for n_id in tree2.all_nodes_itr()], [])
+    all_muts = sum([n.data.muts for n in tree1.all_nodes_itr()], [])
+    all_muts += sum([n.data.muts for n in tree2.all_nodes_itr()], [])
     muts_map = {m: i for i, m in enumerate(set(all_muts))}
 
     fd1 = mut_frequency_diff(tree1, muts_map)
