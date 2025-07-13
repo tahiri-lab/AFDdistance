@@ -6,7 +6,7 @@ from treelib.tree import Tree
 
 
 class SubCloneData:
-    def __init__(self, freq: int, mutation_load: list) -> None:
+    def __init__(self, freq: float, mutation_load: list) -> None:
         self.freq = freq
         self.cumuled_freq = None
         self.muts = mutation_load
@@ -26,14 +26,14 @@ def parent_children_split(newick: str) -> tuple[str, str | None]:
         return newick, None
 
 
-def get_mutation_load(subclone: str) -> list[str]:
+def get_mutation_load(subclone: str) -> tuple[float, list[str]]:
     """Get the list of mutation in a subclone from newick"""
-    brackets = r"\{(.*?)\}"
-    match = re.search(brackets, subclone)
+    muts, freq = subclone.split(":")
+    match = re.search(r"\{(.*?)\}", muts)
     if match:
-        return match.group(1).split(",")
+        return float(freq), match.group(1).split(",")
     else:
-        return [subclone]
+        return float(freq), [muts]
 
 
 # https://bitbucket.org/oesperlab/stereodist/src/master/utils.py
@@ -67,11 +67,12 @@ def parse_newick(newick: str, tree: Tree, parent: Node | None) -> None:
     fill <tree> in place
     """
     node, childrens = parent_children_split(newick)
+    freq, muts = get_mutation_load(node)
     p_node = tree.create_node(
         str(tree.size()),
         str(tree.size()),
         parent=parent,
-        data=SubCloneData(0, get_mutation_load(node)),
+        data=SubCloneData(freq, muts),
     )
 
     if childrens is not None:
