@@ -42,7 +42,7 @@ def node_frequency_diff(tree: Tree) -> sparse.lil_matrix:
             # all ancestor of c or in the stack
             for a_id in s:
                 a_freq = tree[a_id].data.cumuled_freq
-                fd[int(a_id), int(c_id)] = c_freq / a_freq
+                fd[int(a_id), int(c_id)] += c_freq / a_freq
 
             # mark c and put it on the stack to compute its children frequency diffs
             marked[c_id] = True

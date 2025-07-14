@@ -88,6 +88,8 @@ df_melted = pd.melt(
     value_name="distance value",
 )
 
+fig, ax = plt.subplots(figsize=(10, 5))
+
 sns.lineplot(
     data=df_melted,
     x="swap_id",
@@ -96,4 +98,5 @@ sns.lineplot(
     linestyle="--",
     marker="o",
 )
-plt.show()
+# plt.show()
+plt.savefig("../figures/swap.pdf")
