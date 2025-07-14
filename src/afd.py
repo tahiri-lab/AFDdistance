@@ -105,8 +105,9 @@ def afd(input1: Tree | str, input2: Tree | str):
     all_muts = sum([n.data.muts for n in tree1.all_nodes_itr()], [])
     all_muts += sum([n.data.muts for n in tree2.all_nodes_itr()], [])
     muts_map = {m: i for i, m in enumerate(set(all_muts))}
+    m = len(muts_map)
 
     fd1 = mut_frequency_diff(tree1, muts_map)
     fd2 = mut_frequency_diff(tree2, muts_map)
 
-    return fd_diff(fd1, fd2)
+    return fd_diff(fd1, fd2) / (m * (m - 1) / 2)
