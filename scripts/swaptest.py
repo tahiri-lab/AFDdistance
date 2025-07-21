@@ -3,12 +3,13 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from afd import afd_distance, afd_upper_bound
+from afd.tree import TumorTree, precompute_all
+from afd.utils import newick_to_tree, tree_to_newick
 from treelib.tree import Tree
 
-from afd import afd
 from stereodist.CASet import caset_intersection, caset_union
 from stereodist.DISC import disc_intersection, disc_union
-from utils import newick_to_tree, tree_to_newick
 
 
 def swap_labels(tree: Tree, nid1: str, nid2: str) -> Tree:
@@ -24,7 +25,8 @@ def swap_labels(tree: Tree, nid1: str, nid2: str) -> Tree:
 
 
 tbase = newick_to_tree("((C:1,D:1)B:1,(F:1,G:1)E:1)A:1")
-newick_tbase = tree_to_newick(tbase)
+ref_nwk = tree_to_newick(tbase, freq=False, mode="bracket")
+ref_tree = TumorTree(deepcopy(tbase))
 
 swap1 = [
     swap_labels(tbase, "5", "6"),
@@ -61,10 +63,11 @@ swap7 = [
     swap_labels(tbase, "0", "5"),
     swap_labels(tbase, "0", "6"),
 ]
-
 swaps = [swap1, swap2, swap3, swap4, swap5, swap6, swap7]
 swaps_flat = sum(swaps, [])
-newick_swaps_flat = [tree_to_newick(s) for s in swaps_flat]
+
+swap_nwk = [tree_to_newick(s) for s in swaps_flat]
+swap_trees = [TumorTree(t) for t in swaps_flat]
 
 swap_classes = sum([[f"swap{i}"] * len(s) for i, s in enumerate(swaps)], [])
 swaps_ids = list(range(len(swaps_flat)))
@@ -76,9 +79,12 @@ data = pd.DataFrame(
     }
 )
 
-data["afd"] = [afd(tbase, s) for s in swaps_flat]
-data["caset_u"] = [caset_union(newick_tbase, s) for s in newick_swaps_flat]
-data["disc_u"] = [disc_union(newick_tbase, s) for s in newick_swaps_flat]
+precompute_all(swap_trees + [ref_tree])
+data["afd"] = [
+    afd_distance(ref_tree, t) / afd_upper_bound(ref_tree, t) for t in swap_trees
+]
+data["caset_u"] = [caset_union(ref_nwk, t) for t in swap_nwk]
+data["disc_u"] = [disc_union(ref_nwk, t) for t in swap_nwk]
 
 df_melted = pd.melt(
     data,
@@ -98,5 +104,5 @@ sns.lineplot(
     linestyle="--",
     marker="o",
 )
-# plt.show()
-plt.savefig("../figures/swap.pdf")
+plt.show()
+# plt.savefig("../figures/swap.pdf")
