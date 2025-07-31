@@ -1,0 +1,186 @@
+[
+  {
+    "id": "AML-01-001",
+    "nwk": "((((WT1_p.R80fs:541)NPM1_p.L287fs:6808)WT1_p.R370fs:3334)FLT3-ITD:391)Root:296"
+  },
+  {
+    "id": "AML-02-001",
+    "nwk": "(((((JAK2_p.V617F:1716)RUNX1_p.S141fs:3904)FLT3_p.D835V:1226)SF3B1_p.K666N:262)DNMT3A_p.R882H:529)Root:291"
+  },
+  {
+    "id": "AML-03-001",
+    "nwk": "((NPM1_p.L287fs:6330)FLT3-ITD:1949)Root:671"
+  },
+  {
+    "id": "AML-04-001",
+    "nwk": "((((IDH1_p.R132C:4)NRAS_p.G12D:52,(PTPN11_p.F71L:892)FLT3-ITD:4091,((WT1_p.R380fs:250)WT1_p.R380W:5)FLT3_p.D835E:32)SRSF2_p.P95H:249)SF3B1_p.K666N:140)Root:158"
+  },
+  {
+    "id": "AML-05-001",
+    "nwk": "((FLT3-ITD:664)NRAS_p.G13D:3681,FLT3_p.D835A:3765,FLT3_p.D835Y:288,FLT3_p.N676K:207)Root:1584"
+  },
+  {
+    "id": "AML-06-001",
+    "nwk": "((NRAS_p.G13D:669)NRAS_p.G12D:4741,NRAS_p.G13R:602,NRAS_p.Q61H:1477,FLT3-ITD:1059)Root:2847"
+  },
+  {
+    "id": "AML-07-001",
+    "nwk": "(((RUNX1_p.D123fs:4908)SRSF2_p.P95H:835)IDH2_p.R140Q:497)Root:476"
+  },
+  {
+    "id": "AML-08-001",
+    "nwk": "(((SRSF2_p.P95L:2238)DNMT3A_p.R882H:1603)IDH2_p.R140Q:380)Root:453"
+  },
+  {
+    "id": "AML-09-001",
+    "nwk": "((FLT3_p.D835Y:122,KRAS_p.G13D:381,FLT3_p.D835E:626,FLT3-ITD:5062)NPM1_p.L287fs:1090)Root:1071"
+  },
+  {
+    "id": "AML-10-001",
+    "nwk": "((((FLT3-ITD:1761)SRSF2_p.P95L:2294)GATA2_p.T303A:2255)WT1_p.R430P:1388)Root:1028"
+  },
+  {
+    "id": "AML-11-001",
+    "nwk": "((ASXL1_p.G642fs:2388)SRSF2_p.P95A:1538)Root:1347"
+  },
+  {
+    "id": "AML-12-001",
+    "nwk": "((PTPN11_p.E76V:1146,FLT3_p.836_837del:637)NPM1_p.L287fs:4048)Root:1467"
+  },
+  {
+    "id": "AML-13-001",
+    "nwk": "(((NPM1_p.L287fs:2581)WT1_p.R462P:1145)IDH2_p.R140Q:1188,TP53_p.V172fs:368)Root:4060"
+  },
+  {
+    "id": "AML-14-001",
+    "nwk": "((PTPN11_p.A72T:1464,NRAS_p.G13R:1139,NRAS_p.G12D:403,KRAS_p.G12V:889,KRAS_p.G13D:335,KRAS_p.G12D:165)NPM1_p.L287fs:1682)Root:971"
+  },
+  {
+    "id": "AML-15-001",
+    "nwk": "((NPM1_p.L287fs:3941)IDH1_p.R132G:1415)Root:514"
+  },
+  {
+    "id": "AML-16-001",
+    "nwk": "((DNMT3A_p.R882H:3436)IDH1_p.R132H:1059,IDH2_p.R140Q:367)Root:5000"
+  },
+  {
+    "id": "AML-17-001",
+    "nwk": "(((NPM1_p.L287fs:4408)DNMT3A_p.F868L:1319)NRAS_p.G12D:431)Root:464"
+  },
+  {
+    "id": "AML-18-001",
+    "nwk": "(((ASXL1_p.P808fs:4024)RUNX1_splicing:1921)IDH2_p.R172K:1157)Root:680"
+  },
+  {
+    "id": "AML-19-001",
+    "nwk": "(((WT1_p.S381fs:1654)RUNX1_p.Q264fs:2356)FLT3-ITD:553)Root:701"
+  },
+  {
+    "id": "AML-20-001",
+    "nwk": "(((NRAS_p.G13V:4078)NPM1_p.L287fs:1653)DNMT3A_p.R882C:2402)Root:1915"
+  },
+  {
+    "id": "AML-21-001",
+    "nwk": "(((NRAS_p.G12D:5731)NPM1_p.L287fs:1297)WT1_p.A382fs:915)Root:417"
+  },
+  {
+    "id": "AML-22-001",
+    "nwk": "((NRAS_p.G12V:100)KRAS_p.G12V:1038,KRAS_p.G12S:103,NRAS_p.G13D:393,NRAS_p.G12C:314,NRAS_p.G12D:213,NRAS_p.G12S:193,NRAS_p.G13C:110)Root:456"
+  },
+  {
+    "id": "AML-23-001",
+    "nwk": "((NRAS_p.G13R:719)WT1_p.V379fs:721)Root:623"
+  },
+  {
+    "id": "AML-24-001",
+    "nwk": "((((WT1_p.C453Y:2112)FLT3-ITD:1871,FLT3_p.A680V:119)U2AF1_p.S34Y:1774)DNMT3A_p.R882H:114)Root:385"
+  },
+  {
+    "id": "AML-25-001",
+    "nwk": "((((FLT3-ITD:293)RUNX1_p.Q335X:2834)ASXL1_p.G642fs:1670)EZH2_p.R670C:440)Root:1125"
+  },
+  {
+    "id": "AML-26-001",
+    "nwk": "(((FLT3_p.D835A:1006,FLT3_p.D835Y:163,KRAS_p.Q61L:592,NRAS_p.G13D:445)NPM1_p.L287fs:910)DNMT3A_p.R882H:2995)Root:3487"
+  },
+  {
+    "id": "AML-27-001",
+    "nwk": "((((NPM1_p.L287fs:2511)TP53_p.Q192X:737)FLT3-ITD:272)DNMT3A_p.R882C:185)Root:379"
+  },
+  {
+    "id": "AML-28-001",
+    "nwk": "((IDH2_p.R140Q:679,((FLT3-ITD:1596)NPM1_p.L287fs:5174)IDH1_p.R132H:1252)DNMT3A_p.R882C:316)Root:547"
+  },
+  {
+    "id": "AML-29-001",
+    "nwk": "((((IDH2_p.R140Q:355)RUNX1_p.R201Q:3590)SRSF2_p.P95H:2115)ASXL1_p.G642fs:1231)Root:502"
+  },
+  {
+    "id": "AML-30-001",
+    "nwk": "((((IDH2_p.R140Q:259)NRAS_p.G13D:121)NPM1_p.L287fs:324)DNMT3A_p.R882H:2172)Root:3788"
+  },
+  {
+    "id": "AML-31-001",
+    "nwk": "((NRAS_p.G13V:1876,WT1_p.A382fs:840,FLT3-ITD:670,PTPN11_p.T52N:403)NPM1_p.L287fs:2390)Root:4041"
+  },
+  {
+    "id": "AML-32-001",
+    "nwk": "((((FLT3_p.D835Y:5450,FLT3-ITD:939)RUNX1_p.R166G:684)SF3B1_p.K700E:204)DNMT3A_p.R882H:199)Root:762"
+  },
+  {
+    "id": "AML-33-001",
+    "nwk": "(((RUNX1_p.D198N:2821)IDH2_p.R140Q:1845)SRSF2_p.P95H:1369)Root:2083"
+  },
+  {
+    "id": "AML-34-001",
+    "nwk": "((SF3B1_p.K700E:295)KRAS_p.G12D:269,NRAS_p.G13D:369,NRAS_p.G12D:324)Root:3099"
+  },
+  {
+    "id": "AML-35-001",
+    "nwk": "((FLT3-ITD:468)NRAS_p.G12D:3164,PTPN11_p.A72V:342)Root:3608"
+  },
+  {
+    "id": "AML-36-001",
+    "nwk": "(FLT3_p.D835E:1451,NRAS_p.G12S:1016,NRAS_p.G12D:662)Root:5021"
+  },
+  {
+    "id": "AML-37-001",
+    "nwk": "(((NPM1_p.L287fs:4527)NRAS_p.G12D:1072)DNMT3A_p.N879D:273)Root:370"
+  },
+  {
+    "id": "AML-38-001",
+    "nwk": "((((PTPN11_p.G503A:40)PTPN11_p.D61H:504,KRAS_p.G12A:2610,FLT3_p.D835H:96)IDH1_p.R132H:396,(FLT3-ITD:1478,NRAS_p.G13R:709,KRAS_p.G12D:33,PTPN11_p.A72G:107,NRAS_p.G12A:332)IDH2_p.R140Q:361)NPM1_p.L287fs:115)Root:446"
+  },
+  {
+    "id": "AML-39-001",
+    "nwk": "(((PTPN11_p.A72V:404,PTPN11_p.G503A:2964)GATA2_p.N297S:2198)SF3B1_p.K700E:1022)Root:145"
+  },
+  {
+    "id": "AML-40-001",
+    "nwk": "(((NRAS_p.G12D:2046,NRAS_p.G13D:323,FLT3_p.N676K:714,FLT3-ITD:286)NPM1_p.L287fs:1498)IDH2_p.R140Q:816)Root:507"
+  },
+  {
+    "id": "AML-41-001",
+    "nwk": "(((((NRAS_p.G13R:872,NRAS_p.G12A:251,KRAS_p.G12A:265,PTPN11_p.D61H:221,PTPN11_p.A72T:201)SRSF2_p.P95H:1851)IDH2_p.R140Q:837)WT1_p.R369X:226)TP53_p.N235S:280)Root:73"
+  },
+  {
+    "id": "AML-42-001",
+    "nwk": "(((((NRAS_p.G13V:100)RUNX1_p.l366fs:1135,((NRAS_p.G12D:43)RUNX1_p.A142fs:115)STAG2_p.N1046fs:1050)ASXL1_p.G642fs:1050)NRAS_p.G13D:417)EZH2_p.R676H:84)Root:0"
+  },
+  {
+    "id": "AML-51-001",
+    "nwk": "(((FLT3-ITD:1424,FLT3_p.D835Y:2347,NRAS_p.G12D:308,NRAS_p.G12V:400)NPM1_p.L287fs:2497)DNMT3A_p.R882C:660)Root:0"
+  },
+  {
+    "id": "AML-61-001",
+    "nwk": "((NRAS_p.G13D:498,(IDH1_p.R132H:70)PTPN11_p.N58D:998,(IDH2_p.R140Q:617)PTPN11_p.P491S:135)NPM1_p.R291fs:405)Root:0"
+  },
+  {
+    "id": "AML-67-001",
+    "nwk": "(((((IDH2_p.R140Q:522)DNMT3A_p.R458fs:81)BCOR_p.Q1592X:18,((((KRAS_p.Q61H:786,(KRAS_p.G60V:271,TP53_p.R202C:109)NRAS_p.G12S:852)U2AF1_p.S34F:439)U2AF1_p.Q84R:122)BCOR_p.G1474fs:115)STAG2_p.Y636_H637delinsX:17)ASXL1_p.S770X:4)DNMT3A_p.F732fs:11)Root:0"
+  },
+  {
+    "id": "AML-80-001",
+    "nwk": "(((NPM1_p.L287fs:1139)TP53_p.A355S:563)TET2_pI274fs:147)Root:0"
+  }
+]

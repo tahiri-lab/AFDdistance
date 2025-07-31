@@ -3,13 +3,14 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from stereodist.CASet import caset_intersection, caset_union
+from stereodist.DISC import disc_intersection, disc_union
+from treelib.tree import Tree
+from utils import save_fig_safe
+
 from afd import afd_distance, afd_upper_bound
 from afd.tree import TumorTree, precompute_all
 from afd.utils import newick_to_tree, tree_to_newick
-from treelib.tree import Tree
-
-from stereodist.CASet import caset_intersection, caset_union
-from stereodist.DISC import disc_intersection, disc_union
 
 
 def swap_labels(tree: Tree, nid1: str, nid2: str) -> Tree:
@@ -81,7 +82,7 @@ data = pd.DataFrame(
 
 precompute_all(swap_trees + [ref_tree])
 data["afd"] = [
-    afd_distance(ref_tree, t) / afd_upper_bound(ref_tree, t) for t in swap_trees
+    afd_distance(ref_tree, t) / afd_upper_bound([ref_tree, t]) for t in swap_trees
 ]
 data["caset_u"] = [caset_union(ref_nwk, t) for t in swap_nwk]
 data["disc_u"] = [disc_union(ref_nwk, t) for t in swap_nwk]
@@ -104,5 +105,6 @@ sns.lineplot(
     linestyle="--",
     marker="o",
 )
-plt.show()
-# plt.savefig("../figures/swap.pdf")
+
+# plt.show()
+save_fig_safe("figures/swaptest.pdf")

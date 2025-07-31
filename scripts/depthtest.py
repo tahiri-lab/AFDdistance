@@ -3,12 +3,13 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from stereodist.CASet import caset_union
+from stereodist.DISC import disc_union
+from utils import save_fig_safe
+
 from afd import afd_distance, afd_upper_bound
 from afd.tree import TumorTree, precompute_all
 from afd.utils import newick_to_tree, tree_to_newick
-
-from stereodist.CASet import caset_union
-from stereodist.DISC import disc_union
 
 # parse base tree
 nwk = "(((((((((J:1)I:1)H:1)G:1)F:1)E:1)D:1)C:1)B:1)A:1"
@@ -39,7 +40,7 @@ data = pd.DataFrame(
 
 # metrics
 data["afd"] = [
-    afd_distance(ref_tree, v) / afd_upper_bound(ref_tree, v) for v in tree_variants
+    afd_distance(ref_tree, v) / afd_upper_bound([ref_tree, v]) for v in tree_variants
 ]
 data["caset_u"] = [caset_union(ref_nwk, v) for v in nwk_variants]
 data["disc_u"] = [disc_union(ref_nwk, v) for v in nwk_variants]
@@ -60,7 +61,9 @@ sns.lineplot(
     linestyle="--",
     marker="o",
 )
-plt.show()
+
+# plt.show()
+save_fig_safe("figures/depthtest.pdf")
 
 
 # tbase = deepcopy(base_trunk)

@@ -20,6 +20,7 @@ class TumorTree:
     _cumuled_freqs: dict[str, float]
     _fd_local: sparse.lil_matrix
     _fd_global: sparse.lil_matrix | None = None
+    _global_map: dict[str, int]
 
     def __init__(self, tree: Tree):
         if isinstance(tree, str):
@@ -30,6 +31,7 @@ class TumorTree:
         self.remap_mutations()
         self.compute_cumuled_freq()
         self.compute_local_fd()
+        self.unmap_mutations()
 
     @property
     def mutations(self) -> list[str]:
@@ -42,7 +44,8 @@ class TumorTree:
         return self._tree
 
     @property
-    def fd(self) -> sparse.lil_matrix:
+    def fd(self) -> sparse.lil_matrix[float]:
+        """Return the global fd matrix"""
         if self._fd_global == None:
             raise Exception(
                 "Accessing uncomputed FD matrix, compute fd_global prior to accessing it"
@@ -50,10 +53,25 @@ class TumorTree:
         return self._fd_global
 
     @property
-    def n_duplicate(self) -> int:
-        """count the number of duplicate for each mutation
-        without counting the first occurence"""
-        return sum((len(i) - 1 for i in self._mutations_map.values()), 0)
+    def size(self) -> int:
+        """size in total number of mutations (including duplicates)"""
+        return len(sum((ids for ids in self._mutations_map.values()), []))
+
+    def count_mutation(self, mut: str) -> int:
+        """return the number of occurence of a mutation in the tree"""
+        return len(self._mutations_map.get(mut, []))
+
+    def count_relation(self, mut1: str, mut2: str) -> int:
+        """return the number of occurences of a relation in the tree"""
+        return len(
+            [
+                1
+                for m1, m2 in product(
+                    self._mutations_map[mut1], self._mutations_map[mut2]
+                )
+                if self._fd_local[m1, m2] > 0
+            ]
+        )
 
     def remap_mutations(self) -> None:
         """Map each mutation to an integer from 0 to m
@@ -69,6 +87,14 @@ class TumorTree:
                 self._mutations_map[m].append(identifier)
                 n.data.muts[i] = identifier
                 identifier += 1
+
+    def unmap_mutations(self) -> None:
+        for n in self.tree.all_nodes_itr():
+            for i, m in enumerate(n.data.muts):
+                m_name = next(
+                    (k for k, v in self._mutations_map.items() if m in v), "none"
+                )
+                n.data.muts[i] = m_name
 
     def compute_cumuled_freq(self) -> dict:
         self._cumuled_freqs = dict()
@@ -88,7 +114,7 @@ class TumorTree:
         for each ancestor descendant relationship. The set of ancestor descendant
         relationship upper bound is $O(m^2)$
         """
-        m = self._tree.size()
+        m = self.size
         self._fd_local = sparse.lil_matrix((m, m))
 
         # walk in reverse so we can infer parent descendants from children descendants
@@ -115,48 +141,69 @@ class TumorTree:
             # write the FD values for each mutation of the current node
             for mut in node_muts:
                 self._fd_local[mut] = node_desc_rates
+                for mut2 in node_muts:
+                    if mut2 != mut:
+                        self._fd_local[mut, mut2] = 1
 
         # collapse columns (same relation from the same ancestor)
         # final result is assigned to the first id of each unique mutation
-        for cols in self._mutations_map.values():
-            if len(cols) == 1:
-                continue
-            for row in self._fd_local.rows:
-                all_values = [
-                    self._fd_local[row, c] for c in cols if self._fd_local[row, c] != 0
-                ]
-                collapsed_value = len(all_values) * sum(all_values, 0)
-                self._fd_local[row, cols[0]] = collapsed_value
-                for c in cols[1:]:
-                    self._fd_local[row, c] = 0
-
+        # for cols in self._mutations_map.values():
+        #     if len(cols) == 1:
+        #         continue
+        #     for row in range(m):
+        #         all_values = [
+        #             self._fd_local[row, c] for c in cols if self._fd_local[row, c] != 0
+        #         ]
+        #         collapsed_value = len(all_values) * sum(all_values, 0)
+        #         self._fd_local[row, cols[0]] = collapsed_value
+        #
         # collaps rows (same relations from different ancestors)
         # final result is assigned to the first id of each unique mutation
-        for rows in self._mutations_map.values():
-            if len(rows) == 1:
-                continue
-            for r in rows[1:]:
-                self._fd_local[rows[0]] += self._fd_local[r]
-                self._fd_local[r] = 0
+        # for rows in self._mutations_map.values():
+        #     if len(rows) == 1:
+        #         continue
+        #     for r in rows[1:]:
+        #         self._fd_local[rows[0]] += self._fd_local[r]
+        #         self._fd_local[r] = 0
 
         return self._fd_local
+
+    def merge_recurrent(self, m1, m2) -> float:
+        """Compute the final falue for ancestry m1 to m2 by
+        collapsing every value that relate to this relation.
+        This gives a sort of sub-matrix with each row relating to m1 and
+        each column relating to m2.
+        - First each row is collapsed (relation from the same ancestor (row))
+        - Then the collapsed values are summed (relations from different ancestors m1)
+        """
+        total = 0.0
+
+        for m1_row in self._mutations_map[m1]:
+            all_values = [
+                self._fd_local[m1_row, m2_col]
+                for m2_col in self._mutations_map[m2]
+                if self._fd_local[m1_row, m2_col] != 0
+            ]
+            collapsed_value = len(all_values) * sum(all_values, 0)
+            total += collapsed_value
+
+        return total
 
     def compute_global_fd(self, global_map: dict[str, int]) -> sparse.lil_matrix:
         """This map the local fd matrix to a global matrix which represent relationship
         for any mutation being in the global set of trees to compare.
         """
+        self._global_map = global_map
         m = len(global_map)
         self._fd_global = sparse.lil_matrix((m, m))
 
         for mut_i, mut_j in product(self.mutations, self.mutations):
             if mut_i not in global_map.keys() or mut_j not in global_map.keys():
                 continue
-            i_loc = self._mutations_map[mut_i][0]
-            j_loc = self._mutations_map[mut_j][0]
             i_glob = global_map[mut_i]
             j_glob = global_map[mut_j]
 
-            self._fd_global[i_glob, j_glob] = self._fd_local[i_loc, j_loc]
+            self._fd_global[i_glob, j_glob] = self.merge_recurrent(mut_i, mut_j)
 
         return self._fd_global
 
