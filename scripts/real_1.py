@@ -17,7 +17,7 @@ from afd.tree import TumorTree, precompute_all
 from afd.utils import newick_to_tree
 
 NORM_MUTS = None  # None, gene or position
-NORM_FS = True  # for norm_muts potition only
+NORM_FS = False  # for norm_muts potition only
 PRINT_DEF = False
 PRINT_NORM = True
 PRINT_TREES = False
@@ -123,11 +123,29 @@ objects = np.array(all_trees)
 
 
 def distanceafd(obj1, obj2):
-    return afd_distance(obj1, obj2, True) / afd_upper_bound([obj1, obj2], "nrel")
+    return afd_distance(obj1, obj2, False) / afd_upper_bound([obj1, obj2], "nb_rel_add")
 
 
 def distanceafd2(obj1, obj2):
-    return afd_distance(obj1, obj2, False) / afd_upper_bound([obj1, obj2], "sumrel")
+    return afd_distance(obj1, obj2, False) / afd_upper_bound(
+        [obj1, obj2], "nb_rel_union"
+    )
+
+
+def distanceafd3(obj1, obj2):
+    return afd_distance(obj1, obj2, False) / afd_upper_bound(
+        [obj1, obj2], "val_rel_add"
+    )
+
+
+def distanceafd_max(obj1, obj2):
+    return afd_distance(obj1, obj2, True) / afd_upper_bound([obj1, obj2], "nb_rel_add")
+
+
+def distanceafd2_max(obj1, obj2):
+    return afd_distance(obj1, obj2, True) / afd_upper_bound(
+        [obj1, obj2], "nb_rel_union"
+    )
 
 
 def distancead(obj1, obj2):
@@ -144,6 +162,16 @@ def distancecas(obj1, obj2):
     )
 
 
+def distancecasi(obj1, obj2):
+    try:
+        return caset_intersection(
+            obj1.to_newick(freq=False, mode="bracket"),
+            obj2.to_newick(freq=False, mode="bracket"),
+        )
+    except:
+        return 1
+
+
 def distancedisc(obj1, obj2):
     return disc_union(
         obj1.to_newick(freq=False, mode="bracket"),
@@ -151,12 +179,25 @@ def distancedisc(obj1, obj2):
     )
 
 
+def distancedisci(obj1, obj2):
+    try:
+        return disc_intersection(
+            obj1.to_newick(freq=False, mode="bracket"),
+            obj2.to_newick(freq=False, mode="bracket"),
+        )
+    except:
+        return 1
+
+
 metrics = {
-    "AFD max 1 (nrel)": distanceafd,
-    "AFD no max (sumrel)": distanceafd2,
-    "AD": distancead,
-    "CASet U": distancecas,
-    "DISC U": distancedisc,
+    "AFD no max ( / val rel add )": distanceafd3,
+    "AFD max ( / nb rel add )": distanceafd_max,
+    # "AFD max ( / nb rel union )": distanceafd2_max,
+    # "AD": distancead,
+    # "CASet U": distancecas,
+    # "DISC U": distancedisc,
+    # "CASet I": distancecasi,
+    # "DISC I": distancedisci,
 }
 
 for name, metric in metrics.items():
@@ -241,93 +282,3 @@ for name, metric in metrics.items():
     ax2.set_xticks(range(2, max_clusters + 1))
 
     plt.show()
-
-#
-# from fcmeans import FCM
-# from scipy.spatial.distance import squareform
-# from sklearn.manifold import MDS
-#
-# metrics = {
-#     "AFD max 1 (nrel)": distanceafd,
-#     "AFD no max (sumrel)": distanceafd2,
-# }
-#
-# for name, metric in metrics.items():
-#     n = len(objects)
-#     labels = [t["id"] for t in tree_infos]
-#
-#     dist_matrix = np.zeros((n, n))
-#     for i in range(n):
-#         for j in range(i + 1, n):
-#             d = metric(objects[i], objects[j])
-#             dist_matrix[i, j] = d
-#             dist_matrix[j, i] = d
-#
-#     condensed_dist = squareform(dist_matrix)
-#     linked = linkage(condensed_dist, method="average")
-#
-#     min_clusters = 2
-#     max_clusters = n - 1
-#     scores = []
-#     clusterings = []
-#
-#     for k in range(min_clusters, max_clusters + 1):
-#         fcm = FCM(
-#             m=2.0, max_iter=150, error=1e-5, n_jobs=1, n_clusters=k, random_state=0
-#         )
-#         fcm.fit(dist_matrix)  # It expects features, so we’ll transform below
-#
-#         # Use hard labels from fuzzy membership for silhouette
-#         labels_hard = fcm.u.argmax(axis=1)
-#
-#         # Silhouette requires a distance matrix, use precomputed mode
-#         score = silhouette_score(dist_matrix, labels_hard, metric="precomputed")
-#         scores.append(score)
-#         clusterings.append(fcm)
-#
-#     best_index = np.argmax(scores)
-#     best_k = best_index + min_clusters
-#     best_model = clusterings[best_index]
-#     best_labels = best_model.u.argmax(axis=1)
-#
-#     fig, axes = plt.subplots(
-#         1, 3, figsize=(18, 6), gridspec_kw={"width_ratios": [1, 1, 1.2]}
-#     )
-#     ax1, ax2, ax3 = axes
-#
-#     # Plot 1: Silhouette Score
-#     ax1.plot(range(min_clusters, max_clusters + 1), scores, marker="o")
-#     ax1.set_title("Silhouette Score vs Number of Clusters")
-#     ax1.set_xlabel("Number of Clusters")
-#     ax1.set_ylabel("Silhouette Score")
-#     ax1.grid(True)
-#     ax1.set_xticks(range(min_clusters, max_clusters + 1))
-#
-#     # Plot 2: MDS projection (2D embedding)
-#     mds = MDS(n_components=2, dissimilarity="precomputed", random_state=0)
-#     coords = mds.fit_transform(dist_matrix)
-#     scatter = ax2.scatter(coords[:, 0], coords[:, 1], c=best_labels, cmap="tab10", s=50)
-#     ax2.set_title(f"MDS Projection (k={best_k})")
-#     ax2.set_xticks([])
-#     ax2.set_yticks([])
-#     legend_labels = np.unique(best_labels)
-#     ax2.legend(*scatter.legend_elements(), title="Cluster")
-#
-#     # Plot 3: Heatmap of reordered distance matrix
-#     # Order objects by cluster assignment
-#     sort_idx = np.argsort(best_labels)
-#     sorted_matrix = dist_matrix[sort_idx][:, sort_idx]
-#     sorted_labels = [labels[i] for i in sort_idx] if labels else sort_idx
-#
-#     sns.heatmap(
-#         sorted_matrix,
-#         ax=ax3,
-#         cmap="viridis",
-#         xticklabels=sorted_labels,
-#         yticklabels=sorted_labels,
-#     )
-#     ax3.set_title("Distance Matrix (Cluster-Sorted)")
-#     ax3.tick_params(labelrotation=90)
-#
-#     plt.tight_layout()
-#     plt.show()

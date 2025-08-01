@@ -9,12 +9,19 @@ def afd_upper_bound(trees: list[TumorTree], type="nmuts") -> float:
     For each mutations we count its number of occurence in the tree where it is the most frequent
     """
     if type == "nmuts":
+        # compute it by the number of mutations
         all_muts = get_all_mutations(trees)
         m = len(all_muts)
         return m * (m - 1)
-    elif type == "nrel":
+    elif type == "nb_rel_add":
+        # sum the nnz of every matrices
         return sum((t.fd.nnz for t in trees), 0)
-    elif type == "sumrel":
+    elif type == "nb_rel_union":
+        # get the nnz of the summed matrices
+        union = sum((t.fd for t in trees[1:]), trees[0].fd)
+        return union.nnz
+    elif type == "val_rel_add":
+        # sum all the values of the matrices
         return sum((t.fd.sum() for t in trees), 0)
     else:
         return 0
