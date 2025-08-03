@@ -21,6 +21,10 @@ class SubCloneData:
         self.cumuled_freq = None
         self.muts = mutation_load
 
+    @property
+    def displaydata(self) -> str:
+        return f"{self.muts} = {self.cumuled_freq}"
+
 
 def parent_children_split(newick: str) -> tuple[str, str | None]:
     """Split parent(children) parts of the newick string

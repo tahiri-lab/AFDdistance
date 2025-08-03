@@ -104,6 +104,7 @@ class TumorTree:
             for child in self.tree.children(nid):
                 cid = child.identifier
                 self._cumuled_freqs[nid] += self._cumuled_freqs[cid]
+            node.data.cumuled_freq = self._cumuled_freqs[nid]
         return self._cumuled_freqs
 
     def compute_local_fd(self) -> sparse.lil_matrix:

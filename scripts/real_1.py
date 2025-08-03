@@ -1,5 +1,6 @@
 import json
 import re
+from typing import cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,6 +12,7 @@ from scipy.spatial.distance import squareform
 from sklearn.metrics import silhouette_score
 from stereodist.CASet import caset_intersection, caset_union
 from stereodist.DISC import disc_intersection, disc_union
+from treelib.node import Node
 
 from afd import afd_distance, afd_upper_bound
 from afd.tree import TumorTree, precompute_all
@@ -21,6 +23,7 @@ NORM_FS = False  # for norm_muts potition only
 PRINT_DEF = False
 PRINT_NORM = True
 PRINT_TREES = False
+NORM_ROOT = True
 
 
 with open("scripts/aml_trees.json", "r") as f:
@@ -82,6 +85,9 @@ def show_muts_content(trees_list) -> None:
 for t in tree_infos:
     # print(t["id"])
     new_tree = newick_to_tree(t["nwk"], freq=True, mode="bracket")
+    if NORM_ROOT:
+        r = cast(Node, new_tree[cast(str, new_tree.root)])
+        r.data.freq = 0
     t["tree"] = new_tree
 
 if PRINT_DEF:
@@ -191,7 +197,7 @@ def distancedisci(obj1, obj2):
 
 metrics = {
     "AFD no max ( / val rel add )": distanceafd3,
-    "AFD max ( / nb rel add )": distanceafd_max,
+    # "AFD max ( / nb rel add )": distanceafd_max,
     # "AFD max ( / nb rel union )": distanceafd2_max,
     # "AD": distancead,
     # "CASet U": distancecas,
@@ -258,7 +264,12 @@ for name, metric in metrics.items():
 
     for cluster_id in sorted(set(clusters)):
         cluster_labels = [labels[i] for i, c in enumerate(clusters) if c == cluster_id]
-        print(f"Cluster {cluster_id}: {cluster_labels}")
+        cluster_trees = [objects[i] for i, c in enumerate(clusters) if c == cluster_id]
+        print("======================")
+        print(f"Cluster {cluster_id}: {cluster_labels}\n")
+        print("======================")
+        for t in cluster_trees:
+            t.tree.show(data_property="displaydata")
 
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15, 7.5))
     dendrogram(
