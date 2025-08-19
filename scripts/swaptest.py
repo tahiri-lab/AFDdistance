@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+import distances as dist
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -26,7 +27,6 @@ def swap_labels(tree: Tree, nid1: str, nid2: str) -> Tree:
 
 
 tbase = newick_to_tree("((C:1,D:1)B:1,(F:1,G:1)E:1)A:1")
-ref_nwk = tree_to_newick(tbase, freq=False, mode="bracket")
 ref_tree = TumorTree(deepcopy(tbase))
 
 swap1 = [
@@ -66,8 +66,6 @@ swap7 = [
 ]
 swaps = [swap1, swap2, swap3, swap4, swap5, swap6, swap7]
 swaps_flat = sum(swaps, [])
-
-swap_nwk = [tree_to_newick(s) for s in swaps_flat]
 swap_trees = [TumorTree(t) for t in swaps_flat]
 
 swap_classes = sum([[f"swap{i}"] * len(s) for i, s in enumerate(swaps)], [])
@@ -81,16 +79,16 @@ data = pd.DataFrame(
 )
 
 precompute_all(swap_trees + [ref_tree])
-data["afd"] = [
-    afd_distance(ref_tree, t) / afd_upper_bound([ref_tree, t]) for t in swap_trees
-]
-data["caset_u"] = [caset_union(ref_nwk, t) for t in swap_nwk]
-data["disc_u"] = [disc_union(ref_nwk, t) for t in swap_nwk]
+data["AFD"] = [dist.distanceafd(ref_tree, t) for t in swap_trees]
+data["CASet"] = [dist.distancecas(ref_tree, t) for t in swap_trees]
+data["DISC"] = [dist.distancedisc(ref_tree, t) for t in swap_trees]
+data["AD"] = [dist.distancead(ref_tree, t) for t in swap_trees]
+data["MP3"] = [dist.distancemp3(ref_tree, t) for t in swap_trees]
 
 df_melted = pd.melt(
     data,
     id_vars=["swap_id", "swap_class"],
-    value_vars=["afd", "caset_u", "disc_u"],
+    value_vars=["AFD", "CASet", "DISC", "AD", "MP3"],
     var_name="distance metric",
     value_name="distance value",
 )
@@ -106,5 +104,9 @@ sns.lineplot(
     marker="o",
 )
 
+plt.xticks(list(range(0, len(swaps_flat))))
+
 # plt.show()
 save_fig_safe("figures/swaptest.pdf")
+
+data.to_csv("fdc.csv")

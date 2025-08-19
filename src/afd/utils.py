@@ -6,6 +6,7 @@ Trees can be read / write from both format with or without frequency data.
 Frequency data is represented by a float such as: {A,B,C}:0.83
 """
 
+import random
 import re
 from typing import cast
 
@@ -41,13 +42,13 @@ def parent_children_split(newick: str) -> tuple[str, str | None]:
 
 
 def get_mutation_load(
-    subclone: str, parsefreq: bool, mode: str
+    subclone: str, parsefreq: bool, mode: str, cst: str = "1"
 ) -> tuple[float, list[str]]:
     """Get the list of mutation in a subclone from newick"""
     if parsefreq:
         muts, freq = subclone.split(":")
     else:
-        muts, freq = subclone, 1
+        muts, freq = subclone, int(cst) if cst != "rnd" else random.randint(1, 10)
 
     if mode == "bracket":
         match = re.search(r"\{(.*?)\}", muts)
@@ -94,12 +95,13 @@ def parse_newick(
     parent: Node | None,
     parsefreq: bool,
     mode: str = "bracket",
+    cst: str = "1",
 ) -> None:
     """Recursively parse the newick string to fill the tree.
     fill <tree> in place
     """
     node, childrens = parent_children_split(newick)
-    freq, muts = get_mutation_load(node, parsefreq, mode)
+    freq, muts = get_mutation_load(node, parsefreq, mode, cst)
     p_node = tree.create_node(
         str(tree.size()),
         str(tree.size()),
@@ -112,12 +114,14 @@ def parse_newick(
             parse_newick(child, tree, p_node, parsefreq, mode)
 
 
-def newick_to_tree(newick: str, freq: bool = True, mode: str = "bracket") -> Tree:
+def newick_to_tree(
+    newick: str, freq: bool = True, mode: str = "bracket", cst: str = "1"
+) -> Tree:
     """Parse a newick string to create a treelib Tree
     return the tree with root "0"
     """
     t = Tree()
-    parse_newick(newick, t, None, freq, mode)
+    parse_newick(newick, t, None, freq, mode, cst)
     t.root = "0"
     return t
 
@@ -151,6 +155,21 @@ def tree_to_newick(
         result += "(" + ",".join(childrens) + ")"
     result += parent
 
+    return result
+
+
+def tree_to_gv(tree: Tree) -> str:
+    result = "digraph Tree {"
+
+    for n in tree.all_nodes_itr():
+        result += f'\n\t{n.identifier} [label="{",".join(n.data.muts)}"];'
+
+    for n in tree.all_nodes_itr():
+        p = tree.parent(n.identifier)
+        if p is not None:
+            result += f"\n\t{p.identifier} -> {n.identifier};"
+
+    result += "\n}"
     return result
 
 

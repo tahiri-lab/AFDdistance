@@ -10,7 +10,7 @@ from scipy import sparse
 from treelib.node import Node
 from treelib.tree import Tree
 
-from .utils import SubCloneData, newick_to_tree, tree_to_newick
+from .utils import SubCloneData, newick_to_tree, tree_to_gv, tree_to_newick
 
 
 class TumorTree:
@@ -146,27 +146,6 @@ class TumorTree:
                     if mut2 != mut:
                         self._fd_local[mut, mut2] = 1
 
-        # collapse columns (same relation from the same ancestor)
-        # final result is assigned to the first id of each unique mutation
-        # for cols in self._mutations_map.values():
-        #     if len(cols) == 1:
-        #         continue
-        #     for row in range(m):
-        #         all_values = [
-        #             self._fd_local[row, c] for c in cols if self._fd_local[row, c] != 0
-        #         ]
-        #         collapsed_value = len(all_values) * sum(all_values, 0)
-        #         self._fd_local[row, cols[0]] = collapsed_value
-        #
-        # collaps rows (same relations from different ancestors)
-        # final result is assigned to the first id of each unique mutation
-        # for rows in self._mutations_map.values():
-        #     if len(rows) == 1:
-        #         continue
-        #     for r in rows[1:]:
-        #         self._fd_local[rows[0]] += self._fd_local[r]
-        #         self._fd_local[r] = 0
-
         return self._fd_local
 
     def merge_recurrent(self, m1, m2) -> float:
@@ -217,9 +196,12 @@ class TumorTree:
         """
         return tree_to_newick(self.tree, freq, mode)
 
+    def to_gv(self) -> str:
+        return tree_to_gv(self.tree)
+
     @classmethod
-    def from_newick(cls, nwk: str, freq: bool, mode: str):
-        return cls(newick_to_tree(nwk, freq, mode))
+    def from_newick(cls, nwk: str, freq: bool, mode: str, cst: str = "1"):
+        return cls(newick_to_tree(nwk, freq, mode, cst))
 
 
 def get_all_mutations(trees: Iterable[TumorTree]) -> list[str]:
@@ -230,11 +212,16 @@ def get_all_mutations(trees: Iterable[TumorTree]) -> list[str]:
     return list(muts)
 
 
-def precompute_all(trees: Iterable[TumorTree]) -> dict[str, int]:
+def precompute_all(
+    trees: Iterable[TumorTree], mutations: list | None = None
+) -> dict[str, int]:
     """For every tree, compute global map with respect to the total set of mutations
     so they can be compared together flawlessly
     """
-    global_map = {m: i for i, m in enumerate(get_all_mutations(trees))}
+    if mutations is None:
+        mutations = get_all_mutations(trees)
+
+    global_map = {m: i for i, m in enumerate(mutations)}
     for t in trees:
         t.compute_global_fd(global_map)
     return global_map

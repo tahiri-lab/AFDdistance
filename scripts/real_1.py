@@ -1,27 +1,28 @@
 import json
 import re
-from typing import cast
+from itertools import product
+from typing import Counter, cast
 
-import matplotlib.pyplot as plt
+import mp3treesim as mp3
 import numpy as np
-import pandas as pd
-import seaborn as sns
-from gmd.utils.distance_measures.AD_dist.ad import ancestor_descendant
-from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
+from afd import afd_distance, afd_upper_bound
+from afd.tree import TumorTree, get_all_mutations, precompute_all
+from afd.utils import newick_to_tree
+from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial.distance import squareform
 from sklearn.metrics import silhouette_score
-from stereodist.CASet import caset_intersection, caset_union
-from stereodist.DISC import disc_intersection, disc_union
 from treelib.node import Node
 
-from afd import afd_distance, afd_upper_bound
-from afd.tree import TumorTree, precompute_all
-from afd.utils import newick_to_tree
+from gmd.utils.distance_measures.AD_dist.ad import ancestor_descendant
+from stereodist.CASet import caset, caset_intersection, caset_union
+from stereodist.DISC import disc, disc_intersection, disc_union
+from stereodist.utils import ancestor_sets
+from utils import save_fig_safe
 
 NORM_MUTS = None  # None, gene or position
 NORM_FS = False  # for norm_muts potition only
 PRINT_DEF = False
-PRINT_NORM = True
+PRINT_NORM = False
 PRINT_TREES = False
 NORM_ROOT = True
 
@@ -121,7 +122,8 @@ if PRINT_TREES:
 
 
 all_trees = [t["tumortree"] for t in tree_infos]
-precompute_all(all_trees)
+# precompute_all(all_trees, [m for m in get_all_mutations(all_trees) if m != "Root"])
+precompute_all(all_trees, get_all_mutations(all_trees))
 maxdist_glob = afd_upper_bound(all_trees)
 
 
@@ -129,29 +131,12 @@ objects = np.array(all_trees)
 
 
 def distanceafd(obj1, obj2):
-    return afd_distance(obj1, obj2, False) / afd_upper_bound([obj1, obj2], "nb_rel_add")
-
-
-def distanceafd2(obj1, obj2):
-    return afd_distance(obj1, obj2, False) / afd_upper_bound(
-        [obj1, obj2], "nb_rel_union"
-    )
-
-
-def distanceafd3(obj1, obj2):
-    return afd_distance(obj1, obj2, False) / afd_upper_bound(
-        [obj1, obj2], "val_rel_add"
-    )
-
-
-def distanceafd_max(obj1, obj2):
-    return afd_distance(obj1, obj2, True) / afd_upper_bound([obj1, obj2], "nb_rel_add")
-
-
-def distanceafd2_max(obj1, obj2):
-    return afd_distance(obj1, obj2, True) / afd_upper_bound(
-        [obj1, obj2], "nb_rel_union"
-    )
+    if afd_upper_bound([obj1, obj2], "val_rel_add") > 0:
+        return afd_distance(obj1, obj2, False) / afd_upper_bound(
+            [obj1, obj2], "val_rel_add"
+        )
+    else:
+        return 1
 
 
 def distancead(obj1, obj2):
@@ -162,54 +147,105 @@ def distancead(obj1, obj2):
 
 
 def distancecas(obj1, obj2):
-    return caset_union(
-        obj1.to_newick(freq=False, mode="bracket"),
-        obj2.to_newick(freq=False, mode="bracket"),
-    )
+    t1_ancestors = ancestor_sets(obj1.to_newick(freq=False, mode="bracket"))
+    t2_ancestors = ancestor_sets(obj2.to_newick(freq=False, mode="bracket"))
+    union = list(set(t1_ancestors.keys()) | set(t2_ancestors.keys()))
+    # union = [i for i in union if i != "Root"]
+
+    for u in union:
+        if u not in t1_ancestors:
+            t1_ancestors[u] = set()
+        if u not in t2_ancestors:
+            t2_ancestors[u] = set()
+
+    return caset(union, t1_ancestors, t2_ancestors)
+    # return caset_union(
+    #    obj1.to_newick(freq=False, mode="bracket"),
+    #    obj2.to_newick(freq=False, mode="bracket"),
+    # )
 
 
 def distancecasi(obj1, obj2):
+    t1_ancestors = ancestor_sets(obj1.to_newick(freq=False, mode="bracket"))
+    t2_ancestors = ancestor_sets(obj2.to_newick(freq=False, mode="bracket"))
+    intersection = list(set(t1_ancestors.keys()) & set(t2_ancestors.keys()))
+    # intersection = [i for i in intersection if i != "Root"]
     try:
-        return caset_intersection(
-            obj1.to_newick(freq=False, mode="bracket"),
-            obj2.to_newick(freq=False, mode="bracket"),
-        )
+        return caset(intersection, t1_ancestors, t2_ancestors)
+        # return caset_intersection(
+        #    obj1.to_newick(freq=False, mode="bracket"),
+        #    obj2.to_newick(freq=False, mode="bracket"),
+        # )
     except:
         return 1
 
 
 def distancedisc(obj1, obj2):
-    return disc_union(
-        obj1.to_newick(freq=False, mode="bracket"),
-        obj2.to_newick(freq=False, mode="bracket"),
-    )
+    t1_ancestors = ancestor_sets(obj1.to_newick(freq=False, mode="bracket"))
+    t2_ancestors = ancestor_sets(obj2.to_newick(freq=False, mode="bracket"))
+    union = list(set(t1_ancestors.keys()) | set(t2_ancestors.keys()))
+    # union = [i for i in union if i != "Root"]
+
+    for u in union:
+        if u not in t1_ancestors:
+            t1_ancestors[u] = set()
+        if u not in t2_ancestors:
+            t2_ancestors[u] = set()
+
+    return disc(union, t1_ancestors, t2_ancestors)
+    # return disc_union(
+    #    obj1.to_newick(freq=False, mode="bracket"),
+    #    obj2.to_newick(freq=False, mode="bracket"),
+    # )
 
 
 def distancedisci(obj1, obj2):
+    t1_ancestors = ancestor_sets(obj1.to_newick(freq=False, mode="bracket"))
+    t2_ancestors = ancestor_sets(obj2.to_newick(freq=False, mode="bracket"))
+    intersection = list(set(t1_ancestors.keys()) & set(t2_ancestors.keys()))
+    # intersection = [i for i in intersection if i != "Root"]
     try:
-        return disc_intersection(
-            obj1.to_newick(freq=False, mode="bracket"),
-            obj2.to_newick(freq=False, mode="bracket"),
-        )
+        return disc(intersection, t1_ancestors, t2_ancestors)
+        # return disc_intersection(
+        #    obj1.to_newick(freq=False, mode="bracket"),
+        #    obj2.to_newick(freq=False, mode="bracket"),
+        # )
     except:
         return 1
 
 
+def distancemp3(obj1, obj2):
+    t1 = mp3.read_dotstring(obj1.to_gv())
+    t2 = mp3.read_dotstring(obj2.to_gv())
+    try:
+        return 1 - mp3.similarity(t1, t2)
+    except Exception:
+        n1 = set(m for n in obj1.tree.all_nodes_itr() for m in n.data.muts)
+        n2 = set(m for n in obj2.tree.all_nodes_itr() for m in n.data.muts)
+        if len(n1.intersection(n2)) > 2:
+            raise Exception
+        return 1
+
+
 metrics = {
-    "AFD no max ( / val rel add )": distanceafd3,
-    # "AFD max ( / nb rel add )": distanceafd_max,
-    # "AFD max ( / nb rel union )": distanceafd2_max,
+    # "AFD": distanceafd,
     # "AD": distancead,
-    # "CASet U": distancecas,
-    # "DISC U": distancedisc,
-    # "CASet I": distancecasi,
-    # "DISC I": distancedisci,
+    # "CASet_U": distancecas,
+    # "DISC_U": distancedisc,
+    # "CASet_I": distancecasi,
+    # "DISC_I": distancedisci,
+    "MP3": distancemp3,
 }
 
+
+n = len(objects)
+labels = np.array([t["id"] for t in tree_infos])
+
+results: dict = {"labels": labels.tolist()}
+
 for name, metric in metrics.items():
-    print(f"\n================= {name} =================\n")
-    n = len(objects)
-    labels = np.array([t["id"] for t in tree_infos])
+
+    results_metric = {}
 
     dist_matrix = np.zeros((n, n))
     for i in range(n):
@@ -218,78 +254,68 @@ for name, metric in metrics.items():
             dist_matrix[i, j] = d
             dist_matrix[j, i] = d
 
+    results_metric["dist"] = (
+        dist_matrix.tolist()
+    )  # [[float(x) for x in row] for row in dist_matrix.tolist()]
+
     condensed_dist = squareform(dist_matrix)
     linked = linkage(condensed_dist, method="average")
 
-    # === Silhouette Score vs Number of Clusters ===
-    max_clusters = n - 1  # Avoid clusters > n
-    scores = []
+    # Test every possible cluster number
 
-    for k in range(2, max_clusters + 1):
+    results_metric["clusters"] = []
+
+    for k in range(2, n):
         cluster_labels = fcluster(linked, k, criterion="maxclust")
-        score = silhouette_score(dist_matrix, cluster_labels, metric="precomputed")
-        scores.append(score)
+        if len(set(cluster_labels)) == k:
+            score = silhouette_score(dist_matrix, cluster_labels, metric="precomputed")
+            inter = []
+            intra = []
+            for c1 in range(1, k + 1):
+                indices_c1 = [i for i, x in enumerate(cluster_labels) if x == c1]
+                for c2 in range(c1, k + 1):
+                    indices_c2 = [i for i, x in enumerate(cluster_labels) if x == c2]
+                    if c1 == c2:
+                        intra += [
+                            dist_matrix[i, j]
+                            for i, j in product(indices_c1, indices_c2)
+                            if i != j
+                        ]
+                    else:
+                        inter += [
+                            dist_matrix[i, j]
+                            for i, j in product(indices_c1, indices_c2)
+                            if i != j
+                        ]
 
-    n_clusters = scores.index(max(scores)) + 2
+            results_metric["clusters"].append(
+                {
+                    "k": k,
+                    "tags": cluster_labels.tolist(),
+                    "sscore": score,
+                    "inter": inter,
+                    "intra": intra,
+                }
+            )
 
-    # Get cluster assignments
-    clusters = fcluster(linked, n_clusters, criterion="maxclust")
+    results[name] = results_metric
 
-    # Create DataFrame with distance matrix
-    df = pd.DataFrame(dist_matrix, index=labels, columns=labels)
+    max_s = max(c["sscore"] for c in results_metric["clusters"])
+    tags = next(c["tags"] for c in results_metric["clusters"] if c["sscore"] == max_s)
 
-    # Sort by cluster assignments
-    cluster_order = pd.DataFrame({"label": labels, "cluster": clusters}).sort_values(
-        "cluster"
-    )
-    sorted_labels = cluster_order["label"].tolist()
-    df_sorted = df.loc[sorted_labels, sorted_labels]
-    # Create row colors based on clusters
+    tag_counts = Counter(tags)
 
-    colors = plt.cm.tab20(np.linspace(0, 1, n_clusters))
-    cluster_colors = [
-        colors[cluster - 1] for cluster in cluster_order["cluster"]
-    ]  # Create clustermap
+    for t in tag_counts.keys():
+        if tag_counts[t] <= 1:
+            continue
+        print("======================================")
+        print("======================================")
+        tagtrees = [objects[i] for i in range(len(objects)) if tags[i] == t]
+        taglabels = [labels[i] for i in range(len(labels)) if tags[i] == t]
+        for tt, tl in zip(tagtrees, taglabels):
+            print(f"{tl} : ")
+            tt.tree.show(data_property="displaydata")
 
-    sns.clustermap(
-        df_sorted,
-        row_cluster=False,
-        col_cluster=False,
-        xticklabels=True,
-        yticklabels=True,
-        row_colors=cluster_colors,
-        col_colors=cluster_colors,
-    )
-    plt.title(f"{name}: CLustering map")
 
-    for cluster_id in sorted(set(clusters)):
-        cluster_labels = [labels[i] for i, c in enumerate(clusters) if c == cluster_id]
-        cluster_trees = [objects[i] for i, c in enumerate(clusters) if c == cluster_id]
-        print("======================")
-        print(f"Cluster {cluster_id}: {cluster_labels}\n")
-        print("======================")
-        for t in cluster_trees:
-            t.tree.show(data_property="displaydata")
-
-    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15, 7.5))
-    dendrogram(
-        linked,
-        labels=labels,  # Optional: replace with more meaningful labels
-        distance_sort=True,
-        show_leaf_counts=True,
-        ax=ax1,
-    )
-    ax1.set_title(f"{name}: Hierarchical Clustering Dendrogram")
-    ax1.set_xlabel("Object Index")
-    ax1.set_ylabel("Distance")
-    # plt.show()
-
-    # Plot silhouette score
-    ax2.plot(range(2, max_clusters + 1), scores, marker="o")
-    ax2.set_title(f"{name}: Silhouette Score vs Number of Clusters")
-    ax2.set_xlabel("Number of Clusters")
-    ax2.set_ylabel("Silhouette Score")
-    ax2.grid(True)
-    ax2.set_xticks(range(2, max_clusters + 1))
-
-    plt.show()
+# with open("scripts/aml-results-all.json", "w") as f:
+# json.dump(results, f, indent=2)

@@ -1,0 +1,36 @@
+
+        \documentclass[tikz]{standalone}
+        \usepackage{tikz}
+        \usetikzlibrary{trees,shapes.geometric,positioning}
+        
+        \begin{document}
+        \begin{tikzpicture}[
+            sizenode/.style 2 args={circle, draw=#1, fill=#1, minimum size=#2},
+            treenode/.style={ellipse, draw, inner sep=2pt, align=center},
+            level 1/.style={level distance=2cm,sibling distance=3cm},
+            level 2/.style={level distance=2cm,sibling distance=3cm}
+        ]
+        
+        \node [treenode] (root) {root}
+	child {node [treenode] {NRAS\_p.G13D}
+		child {node [treenode] {FLT3-ITD}
+			child {node [sizenode={red!50}{0.8428786926160214cm}] {664}}
+		}
+		child {node [sizenode={blue!50}{2.4328529628122006cm}] {3681}}
+	}
+	child {node [treenode] {FLT3\_p.D835A}
+		child {node [sizenode={green!50}{2.4594316186372973cm}] {3765}}
+	}
+	child {node [treenode] {FLT3\_p.D835Y}
+		child {node [sizenode={yellow!50}{0.42677260944943135cm}] {288}}
+	}
+	child {node [treenode] {FLT3\_p.N676K}
+		child {node [sizenode={orange!50}{0.3189361443005356cm}] {207}}
+	};
+
+\node [left=1cm of root] {\textbf{AML-05-001}};
+
+
+        \end{tikzpicture}
+        \end{document}
+        

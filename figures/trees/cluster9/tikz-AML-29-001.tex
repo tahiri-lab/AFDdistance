@@ -1,0 +1,33 @@
+
+        \documentclass[tikz]{standalone}
+        \usepackage{tikz}
+        \usetikzlibrary{trees,shapes.geometric,positioning}
+        
+        \begin{document}
+        \begin{tikzpicture}[
+            sizenode/.style 2 args={circle, draw=#1, fill=#1, minimum size=#2},
+            treenode/.style={ellipse, draw, inner sep=2pt, align=center},
+            level 1/.style={level distance=2cm,sibling distance=3cm},
+            level 2/.style={level distance=2cm,sibling distance=3cm}
+        ]
+        
+        \node [treenode] (root) {root}
+	child {node [treenode] {ASXL1\_p.G642fs}
+		child {node [treenode] {SRSF2\_p.P95H}
+			child {node [treenode] {RUNX1\_p.R201Q}
+				child {node [treenode] {IDH2\_p.R140Q}
+					child {node [sizenode={red!50}{0.5310555872985983cm}] {355}}
+				}
+				child {node [sizenode={blue!50}{2.4594316186372973cm}] {3590}}
+			}
+			child {node [sizenode={green!50}{1.868336796693304cm}] {2115}}
+		}
+		child {node [sizenode={yellow!50}{1.3465520055069222cm}] {1231}}
+	};
+
+\node [left=1cm of root] {\textbf{AML-29-001}};
+
+
+        \end{tikzpicture}
+        \end{document}
+        

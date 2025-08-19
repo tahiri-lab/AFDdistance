@@ -1,0 +1,39 @@
+
+        \documentclass[tikz]{standalone}
+        \usepackage{tikz}
+        \usetikzlibrary{trees,shapes.geometric,positioning}
+        
+        \begin{document}
+        \begin{tikzpicture}[
+            sizenode/.style 2 args={circle, draw=#1, fill=#1, minimum size=#2},
+            treenode/.style={ellipse, draw, inner sep=2pt, align=center},
+            level 1/.style={level distance=2cm,sibling distance=3cm},
+            level 2/.style={level distance=2cm,sibling distance=3cm}
+        ]
+        
+        \node [treenode] (root) {root}
+	child {node [treenode] {IDH2\_p.R140Q}
+		child {node [treenode] {NPM1\_p.L287fs}
+			child {node [treenode] {NRAS\_p.G12D}
+				child {node [sizenode={red!50}{2.4594316186372973cm}] {2046}}
+			}
+			child {node [treenode] {NRAS\_p.G13D}
+				child {node [sizenode={blue!50}{0.7743426629600269cm}] {323}}
+			}
+			child {node [treenode] {FLT3\_p.N676K}
+				child {node [sizenode={green!50}{1.3619823517353655cm}] {714}}
+			}
+			child {node [treenode] {FLT3-ITD}
+				child {node [sizenode={yellow!50}{0.7040151723649194cm}] {286}}
+			}
+			child {node [sizenode={orange!50}{2.1025645488551943cm}] {1498}}
+		}
+		child {node [sizenode={pink!50}{1.4827044748857696cm}] {816}}
+	};
+
+\node [left=1cm of root] {\textbf{AML-40-001}};
+
+
+        \end{tikzpicture}
+        \end{document}
+        

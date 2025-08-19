@@ -1,19 +1,26 @@
+import random
+import sys
 from copy import deepcopy
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from stereodist.CASet import caset_union
-from stereodist.DISC import disc_union
-from utils import save_fig_safe
-
 from afd import afd_distance, afd_upper_bound
 from afd.tree import TumorTree, precompute_all
 from afd.utils import newick_to_tree, tree_to_newick
 
+import distances as dist
+from stereodist.CASet import caset_union
+from stereodist.DISC import disc_union
+from utils import save_fig_safe
+
+random.seed(sys.argv[1])
+
 # parse base tree
-nwk = "(((((((((J:1)I:1)H:1)G:1)F:1)E:1)D:1)C:1)B:1)A:1"
-tbase = newick_to_tree(nwk, freq=True, mode="bracket")
+nwk = "(((((((((J)I)H)G)F)E)D)C)B)A"
+# nwk = "(((((((((J:1)I:2)H:3)G:4)F:5)E:6)D:7)C:8)B:9)A:10"
+tbase = newick_to_tree(nwk, freq=False, mode="bracket", cst="rnd")
+# tbase = newick_to_tree(nwk, freq=True, mode="bracket", cst="1")
 
 # create reference
 ref_tree = TumorTree(deepcopy(tbase))
@@ -38,33 +45,37 @@ data = pd.DataFrame(
     }
 )
 
+tree_variants = list(reversed(tree_variants))
+
 # metrics
-data["afd"] = [
-    afd_distance(ref_tree, v) / afd_upper_bound([ref_tree, v]) for v in tree_variants
-]
-data["caset_u"] = [caset_union(ref_nwk, v) for v in nwk_variants]
-data["disc_u"] = [disc_union(ref_nwk, v) for v in nwk_variants]
+data["AFD"] = [dist.distanceafd(ref_tree, v) for v in tree_variants]
+data["CASet"] = [dist.distancecas(ref_tree, v) for v in tree_variants]
+data["DISC"] = [dist.distancedisc(ref_tree, v) for v in tree_variants]
+data["AD"] = [dist.distancead(ref_tree, v) for v in tree_variants]
+data["MP3"] = [dist.distancemp3(ref_tree, v) for v in tree_variants]
 
 df_melted = pd.melt(
     data,
     id_vars=["var_id"],
-    value_vars=["afd", "caset_u", "disc_u"],
-    var_name="distance metric",
-    value_name="distance value",
+    value_vars=["AFD", "CASet", "DISC", "AD", "MP3"],
+    var_name="Mesure",
+    value_name="Distance",
 )
 
 sns.lineplot(
     data=df_melted,
     x="var_id",
-    y="distance value",
-    hue="distance metric",
+    y="Distance",
+    hue="Mesure",
     linestyle="--",
     marker="o",
 )
+plt.xticks(list(range(0, len(tree_variants))))
+plt.xlabel("Position")
 
 # plt.show()
 save_fig_safe("figures/depthtest.pdf")
 
-
+data.to_csv("lesfilsdechineng.csv")
 # tbase = deepcopy(base_trunk)
 # tbase.create_node()
