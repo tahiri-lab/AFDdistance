@@ -1,58 +1,49 @@
-import random
-import sys
+"""Replicate of the test from the CASet / DISC article
+with AFD results.
+should add a reference here probably but this will do it for now
+"""
+
 from copy import deepcopy
 
+import distances as dist
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from afd import afd_distance, afd_upper_bound
-from afd.tree import TumorTree, precompute_all
-from afd.utils import newick_to_tree, tree_to_newick
-
-import distances as dist
-from stereodist.CASet import caset_union
-from stereodist.DISC import disc_union
 from utils import save_fig_safe
 
-random.seed(sys.argv[1])
+from afd.tree import TumorTree, precompute_all
+from afd.utils import newick_to_tree
 
 # parse base tree
 nwk = "(((((((((J)I)H)G)F)E)D)C)B)A"
-# nwk = "(((((((((J:1)I:2)H:3)G:4)F:5)E:6)D:7)C:8)B:9)A:10"
-tbase = newick_to_tree(nwk, freq=False, mode="bracket", cst="rnd")
-# tbase = newick_to_tree(nwk, freq=True, mode="bracket", cst="1")
-
-# create reference
-ref_tree = TumorTree(deepcopy(tbase))
-ref_nwk = tree_to_newick(tbase, freq=False, mode="bracket")
+tbase = newick_to_tree(nwk, freq=False, mode="bracket", cst="1")
 
 # generate tree variations
-nwk_variants = []
-tree_variants = []
+trees = []
 for i in range(0, 9):
     newtree = deepcopy(tbase)
     newtree.move_node("9", str(i))
-    nwk_variants.append(tree_to_newick(newtree, freq=False, mode="bracket"))
-    tree_variants.append(TumorTree(newtree))
+    trees.append(TumorTree(newtree))
+
+trees = list(reversed(trees))
+ref_tree = trees[0]
 
 # precompute fd matrices
-precompute_all([ref_tree] + tree_variants)
+precompute_all(trees)
 
 # base dataframe
 data = pd.DataFrame(
     data={
-        "var_id": list(range(len(tree_variants))),
+        "var_id": list(range(len(trees))),
     }
 )
 
-tree_variants = list(reversed(tree_variants))
-
 # metrics
-data["AFD"] = [dist.distanceafd(ref_tree, v) for v in tree_variants]
-data["CASet"] = [dist.distancecas(ref_tree, v) for v in tree_variants]
-data["DISC"] = [dist.distancedisc(ref_tree, v) for v in tree_variants]
-data["AD"] = [dist.distancead(ref_tree, v) for v in tree_variants]
-data["MP3"] = [dist.distancemp3(ref_tree, v) for v in tree_variants]
+data["AFD"] = [dist.distanceafd(ref_tree, v) for v in trees]
+data["CASet"] = [dist.distancecas(ref_tree, v) for v in trees]
+data["DISC"] = [dist.distancedisc(ref_tree, v) for v in trees]
+data["AD"] = [dist.distancead(ref_tree, v) for v in trees]
+data["MP3"] = [dist.distancemp3(ref_tree, v) for v in trees]
 
 df_melted = pd.melt(
     data,
@@ -70,12 +61,9 @@ sns.lineplot(
     linestyle="--",
     marker="o",
 )
-plt.xticks(list(range(0, len(tree_variants))))
+plt.xticks(list(range(0, len(trees))))
 plt.xlabel("Position")
 
 # plt.show()
-save_fig_safe("figures/depthtest.pdf")
-
-data.to_csv("lesfilsdechineng.csv")
-# tbase = deepcopy(base_trunk)
-# tbase.create_node()
+save_fig_safe("results/simulated/depthtest.pdf")
+data.to_csv("results/simulated/depthtest.csv")

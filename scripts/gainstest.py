@@ -1,15 +1,17 @@
+"""Replicate of the test from the GMD article"""
+
+# TODO: add results for gmd adjusted methods
+
 from itertools import product
 
-import matplotlib.pyplot as plt
+import distances as dist
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from afd import afd_distance, afd_upper_bound
-from afd.tree import TumorTree, get_all_mutations, precompute_all
-from afd.utils import newick_to_tree, read_newicks, tree_to_newick
+from utils import save_fig_safe
 
-from stereodist.CASet import caset_intersection, caset_union
-from stereodist.DISC import disc_intersection, disc_union
+from afd.tree import TumorTree, get_all_mutations, precompute_all
+from afd.utils import read_newicks
 
 gain_1_nwk = read_newicks("scripts/data/8mut1gainsA.txt")
 gain_2_nwk = read_newicks("scripts/data/8mut2gainsA.txt")
@@ -31,73 +33,73 @@ gain_4_trees = [
 all_trees = gain_1_trees + gain_2_trees + gain_3_trees + gain_4_trees
 precompute_all(all_trees, get_all_mutations(all_trees))
 
-# Compute with local normalization
 data = []
 for t1, t2 in product(gain_1_trees, gain_1_trees):
     data.append(
         {
             "ngain": 1,
-            "afd": afd_distance(t1, t2, False)
-            / afd_upper_bound([t1, t2], "val_rel_add"),
+            "AFD": dist.distanceafd(t1, t2),
+            "CASet": dist.distancecas(t1, t2),
+            "DISC": dist.distancedisc(t1, t2),
+            "AD": dist.distancead(t1, t2),
+            "MP3": dist.distancemp3(t1, t2),
         }
     )
 for t1, t2 in product(gain_1_trees, gain_2_trees):
     data.append(
         {
             "ngain": 2,
-            "afd": afd_distance(t1, t2, False)
-            / afd_upper_bound([t1, t2], "val_rel_add"),
+            "AFD": dist.distanceafd(t1, t2),
+            "CASet": dist.distancecas(t1, t2),
+            "DISC": dist.distancedisc(t1, t2),
+            "AD": dist.distancead(t1, t2),
+            "MP3": dist.distancemp3(t1, t2),
         }
     )
 for t1, t2 in product(gain_1_trees, gain_3_trees):
     data.append(
         {
             "ngain": 3,
-            "afd": afd_distance(t1, t2, False)
-            / afd_upper_bound([t1, t2], "val_rel_add"),
+            "AFD": dist.distanceafd(t1, t2),
+            "CASet": dist.distancecas(t1, t2),
+            "DISC": dist.distancedisc(t1, t2),
+            "AD": dist.distancead(t1, t2),
+            "MP3": dist.distancemp3(t1, t2),
         }
     )
 for t1, t2 in product(gain_1_trees, gain_4_trees):
     data.append(
         {
             "ngain": 4,
-            "afd": afd_distance(t1, t2, False)
-            / afd_upper_bound([t1, t2], "val_rel_add"),
+            "AFD": dist.distanceafd(t1, t2),
+            "CASet": dist.distancecas(t1, t2),
+            "DISC": dist.distancedisc(t1, t2),
+            "AD": dist.distancead(t1, t2),
+            "MP3": dist.distancemp3(t1, t2),
         }
     )
 
-df = pd.DataFrame(data=data)
-sns.lineplot(data=df, x="ngain", y="afd")
-plt.title("AFD with normalization for each pair")
-plt.show()
 
-#
-# # Compute with global normalization
-# global_upper_bound = afd_upper_bound(all_trees)
-# data2 = []
-# for t1, t2 in product(gain_1_trees, gain_1_trees):
-#     data2.append({"ngain": 1, "afd": afd_distance(t1, t2) / global_upper_bound})
-# for t1, t2 in product(gain_1_trees, gain_2_trees):
-#     data2.append({"ngain": 2, "afd": afd_distance(t1, t2) / global_upper_bound})
-# for t1, t2 in product(gain_1_trees, gain_3_trees):
-#     data2.append({"ngain": 3, "afd": afd_distance(t1, t2) / global_upper_bound})
-# for t1, t2 in product(gain_1_trees, gain_4_trees):
-#     data2.append({"ngain": 4, "afd": afd_distance(t1, t2) / global_upper_bound})
-#
-#
-# df2 = pd.DataFrame(data=data2)
-# sns.lineplot(data=df2, x="ngain", y="afd")
-# plt.title("AFD with set normalization")
-# plt.show()
-#
+df = pd.DataFrame(data=data)
+
+df_melted = pd.melt(
+    df,
+    id_vars=["ngain"],
+    value_vars=["AFD", "CASet", "DISC", "AD", "MP3"],
+    var_name="distance method",
+    value_name="distance value",
+)
+
+sns.lineplot(data=df_melted, x="ngain", y="distance value", hue="distance method")
+save_fig_safe("results/simulated/gaintest_plot.pdf")
+
 
 all_dists = np.zeros((len(all_trees), len(all_trees)))
 for i in range(len(all_trees)):
     for j in range(len(all_trees)):
-        dist = afd_distance(all_trees[i], all_trees[j], False)
-        norm = afd_upper_bound([all_trees[i], all_trees[j]], "val_rel_add")
-        all_dists[i, j] = dist / norm
-        all_dists[j, i] = dist / norm
+        distij = dist.distanceafd(all_trees[i], all_trees[j])
+        all_dists[i, j] = distij
+        all_dists[j, i] = distij
 
 sns.heatmap(all_dists, cmap="coolwarm", annot=False, cbar=True)
-plt.show()
+save_fig_safe("results/simulated/gaintest_hm_afd.pdf")
