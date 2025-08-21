@@ -4,13 +4,12 @@ Useful things to play around with tumor trees
 
 from collections import defaultdict
 from itertools import product
-from typing import Counter, Iterable
+from typing import Iterable
 
 from scipy import sparse
-from treelib.node import Node
 from treelib.tree import Tree
 
-from .utils import SubCloneData, newick_to_tree, tree_to_gv, tree_to_newick
+from .utils import newick_to_tree, tree_to_gv, tree_to_newick
 
 
 class TumorTree:
@@ -18,7 +17,7 @@ class TumorTree:
     _mutations_map: dict[str, list[int]]
 
     _cumuled_freqs: dict[str, float]
-    _fd_local: sparse.lil_matrix
+    _fd_local: sparse.lil_matrix[float]
     _fd_global: sparse.lil_matrix | None = None
     _global_map: dict[str, int]
 
@@ -45,7 +44,7 @@ class TumorTree:
 
     @property
     def fd(self) -> sparse.lil_matrix[float]:
-        """Return the global fd matrix"""
+        """Return the global fd matrix, it must already have been computed"""
         if self._fd_global == None:
             raise Exception(
                 "Accessing uncomputed FD matrix, compute fd_global prior to accessing it"
@@ -56,22 +55,6 @@ class TumorTree:
     def size(self) -> int:
         """size in total number of mutations (including duplicates)"""
         return len(sum((ids for ids in self._mutations_map.values()), []))
-
-    def count_mutation(self, mut: str) -> int:
-        """return the number of occurence of a mutation in the tree"""
-        return len(self._mutations_map.get(mut, []))
-
-    def count_relation(self, mut1: str, mut2: str) -> int:
-        """return the number of occurences of a relation in the tree"""
-        return len(
-            [
-                1
-                for m1, m2 in product(
-                    self._mutations_map[mut1], self._mutations_map[mut2]
-                )
-                if self._fd_local[m1, m2] > 0
-            ]
-        )
 
     def remap_mutations(self) -> None:
         """Map each mutation to an integer from 0 to m
@@ -89,6 +72,10 @@ class TumorTree:
                 identifier += 1
 
     def unmap_mutations(self) -> None:
+        """unmap the renamed mutation on the tree object
+        is there a better solution ? probably
+        do we care for now ? absolutly not
+        """
         for n in self.tree.all_nodes_itr():
             for i, m in enumerate(n.data.muts):
                 m_name = next(
@@ -97,6 +84,9 @@ class TumorTree:
                 n.data.muts[i] = m_name
 
     def compute_cumuled_freq(self) -> dict:
+        """compute the cumuled frequencies based on the simple frequency
+        attached to the tree.
+        """
         self._cumuled_freqs = dict()
         for nid in reversed(list(self.tree.expand_tree(mode=Tree.WIDTH))):
             node = self.tree[nid]
@@ -109,11 +99,10 @@ class TumorTree:
 
     def compute_local_fd(self) -> sparse.lil_matrix:
         """Compute the FD relation matrix local to the tree.
-        which mean mutation indetifier are mapped only locally, and
-        each mutation occurence has a unique id
-        This is roughly in $O(m^2)$ because we fill one cell of the matrix
-        for each ancestor descendant relationship. The set of ancestor descendant
-        relationship upper bound is $O(m^2)$
+        This compute FD values for every mutations of the tree, duplicates are handled
+        independently (as different mutations).
+        There is probably a more straightforward approach but it doesn't matter since
+        non ISA tree aren't officially supported anyway.
         """
         m = self.size
         self._fd_local = sparse.lil_matrix((m, m))
@@ -149,9 +138,8 @@ class TumorTree:
         return self._fd_local
 
     def merge_recurrent(self, m1, m2) -> float:
-        """Compute the final falue for ancestry m1 to m2 by
-        collapsing every value that relate to this relation.
-        This gives a sort of sub-matrix with each row relating to m1 and
+        """Get every duplicated relations such that $m1 \\prec m2$ and gives one.
+        This gives a sort of sub-matrix witheach row relating to m1 and
         each column relating to m2.
         - First each row is collapsed (relation from the same ancestor (row))
         - Then the collapsed values are summed (relations from different ancestors m1)
@@ -167,11 +155,16 @@ class TumorTree:
             collapsed_value = len(all_values) * sum(all_values, 0)
             total += collapsed_value
 
-        return total
+        return float(total)
 
     def compute_global_fd(self, global_map: dict[str, int]) -> sparse.lil_matrix:
-        """This map the local fd matrix to a global matrix which represent relationship
-        for any mutation being in the global set of trees to compare.
+        """Compute the "global" FD matrix which allow for comparison with other trees.
+
+        global_map has for key every mutation that should be considered,
+        and for value the index it should map into the fd matrix.
+
+        Naturally the same global_map must be provided prior to comparint several trees,
+        for this we recommend using the method precompute_all() instead.
         """
         self._global_map = global_map
         m = len(global_map)
@@ -186,6 +179,9 @@ class TumorTree:
             self._fd_global[i_glob, j_glob] = self.merge_recurrent(mut_i, mut_j)
 
         return self._fd_global
+
+    def show(self):
+        self.tree.show(data_property="displaydata")
 
     def to_newick(self, freq: bool, mode: str):
         """Compute the newick string for the tree

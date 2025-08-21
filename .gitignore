@@ -1,6 +1,7 @@
 __pycache__/
 .venv/
 stereodist/
+pygraphviz/
 gmd/
 
 # Byte-compiled / optimized / DLL files

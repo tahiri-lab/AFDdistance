@@ -4,14 +4,11 @@ import distances as dist
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from stereodist.CASet import caset_intersection, caset_union
-from stereodist.DISC import disc_intersection, disc_union
 from treelib.tree import Tree
 from utils import save_fig_safe
 
-from afd import afd_distance, afd_upper_bound
 from afd.tree import TumorTree, precompute_all
-from afd.utils import newick_to_tree, tree_to_newick
+from afd.utils import newick_to_tree
 
 
 def swap_labels(tree: Tree, nid1: str, nid2: str) -> Tree:
@@ -27,7 +24,6 @@ def swap_labels(tree: Tree, nid1: str, nid2: str) -> Tree:
 
 
 tbase = newick_to_tree("((C:1,D:1)B:1,(F:1,G:1)E:1)A:1")
-ref_tree = TumorTree(deepcopy(tbase))
 
 swap1 = [
     swap_labels(tbase, "5", "6"),
@@ -64,11 +60,14 @@ swap7 = [
     swap_labels(tbase, "0", "5"),
     swap_labels(tbase, "0", "6"),
 ]
-swaps = [swap1, swap2, swap3, swap4, swap5, swap6, swap7]
+swaps = [[tbase], swap1, swap2, swap3, swap4, swap5, swap6, swap7]
 swaps_flat = sum(swaps, [])
-swap_trees = [TumorTree(t) for t in swaps_flat]
+trees = [TumorTree(t) for t in swaps_flat]
+ref_tree = trees[0]
 
-swap_classes = sum([[f"swap{i}"] * len(s) for i, s in enumerate(swaps)], [])
+swap_classes = ["ref"] + sum(
+    [[f"swap{i}"] * len(s) for i, s in enumerate(swaps[1:])], []
+)
 swaps_ids = list(range(len(swaps_flat)))
 
 data = pd.DataFrame(
@@ -78,12 +77,12 @@ data = pd.DataFrame(
     }
 )
 
-precompute_all(swap_trees + [ref_tree])
-data["AFD"] = [dist.distanceafd(ref_tree, t) for t in swap_trees]
-data["CASet"] = [dist.distancecas(ref_tree, t) for t in swap_trees]
-data["DISC"] = [dist.distancedisc(ref_tree, t) for t in swap_trees]
-data["AD"] = [dist.distancead(ref_tree, t) for t in swap_trees]
-data["MP3"] = [dist.distancemp3(ref_tree, t) for t in swap_trees]
+precompute_all(trees)
+data["AFD"] = [dist.distanceafd(ref_tree, t) for t in trees]
+data["CASet"] = [dist.distancecas(ref_tree, t) for t in trees]
+data["DISC"] = [dist.distancedisc(ref_tree, t) for t in trees]
+data["AD"] = [dist.distancead(ref_tree, t) for t in trees]
+data["MP3"] = [dist.distancemp3(ref_tree, t) for t in trees]
 
 df_melted = pd.melt(
     data,
@@ -104,9 +103,6 @@ sns.lineplot(
     marker="o",
 )
 
-plt.xticks(list(range(0, len(swaps_flat))))
-
-# plt.show()
-save_fig_safe("figures/swaptest.pdf")
-
-data.to_csv("fdc.csv")
+plt.xticks(list(range(0, len(trees))))
+save_fig_safe("results/simulated/swaptest.pdf")
+data.to_csv("results/simulated/swaptest.csv")
