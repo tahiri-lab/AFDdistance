@@ -1,0 +1,27 @@
+
+        \documentclass[tikz]{standalone}
+        \usepackage{tikz}
+        \usetikzlibrary{trees,shapes.geometric,positioning}
+        
+        \begin{document}
+        \begin{tikzpicture}[
+            sizenode/.style 2 args={circle, draw=#1, fill=#1, minimum size=#2},
+            treenode/.style={ellipse, draw, inner sep=2pt, align=center},
+            level 1/.style={level distance=2cm,sibling distance=3cm},
+            level 2/.style={level distance=2cm,sibling distance=3cm}
+        ]
+        
+        \node [treenode] (root) {root}
+	child {node [treenode] {DNMT3A\_p.R882H}
+		child {node [treenode] {FLT3-ITD}
+			child {node [sizenode={red!50}{2.4594316186372973cm}] {4634}}
+		}
+		child {node [sizenode={blue!50}{1.3421466218831184cm}] {1581}}
+	};
+
+\node [left=1cm of root] {\textbf{AML-65-001}};
+
+
+        \end{tikzpicture}
+        \end{document}
+        

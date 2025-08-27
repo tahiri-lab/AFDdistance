@@ -1,3 +1,5 @@
+"""Basic test to check implementation is correct"""
+
 from itertools import product
 
 from afd import afd_distance, afd_upper_bound

@@ -1,0 +1,30 @@
+
+        \documentclass[tikz]{standalone}
+        \usepackage{tikz}
+        \usetikzlibrary{trees,shapes.geometric,positioning}
+        
+        \begin{document}
+        \begin{tikzpicture}[
+            sizenode/.style 2 args={circle, draw=#1, fill=#1, minimum size=#2},
+            treenode/.style={ellipse, draw, inner sep=2pt, align=center},
+            level 1/.style={level distance=2cm,sibling distance=3cm},
+            level 2/.style={level distance=2cm,sibling distance=3cm}
+        ]
+        
+        \node [treenode] (root) {root}
+	child {node [treenode] {WT1\_splicing}
+		child {node [treenode] {FLT3-ITD}
+			child {node [treenode] {WT1\_p.S381fs}
+				child {node [sizenode={red!50}{2.4594316186372973cm}] {9772}}
+			}
+			child {node [sizenode={blue!50}{0.5815135508574559cm}] {1078}}
+		}
+		child {node [sizenode={green!50}{0.1861066359716141cm}] {299}}
+	};
+
+\node [left=1cm of root] {\textbf{AML-43-001}};
+
+
+        \end{tikzpicture}
+        \end{document}
+        

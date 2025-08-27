@@ -1,0 +1,30 @@
+
+        \documentclass[tikz]{standalone}
+        \usepackage{tikz}
+        \usetikzlibrary{trees,shapes.geometric,positioning}
+        
+        \begin{document}
+        \begin{tikzpicture}[
+            sizenode/.style 2 args={circle, draw=#1, fill=#1, minimum size=#2},
+            treenode/.style={ellipse, draw, inner sep=2pt, align=center},
+            level 1/.style={level distance=2cm,sibling distance=3cm},
+            level 2/.style={level distance=2cm,sibling distance=3cm}
+        ]
+        
+        \node [treenode] (root) {root}
+	child {node [treenode] {NRAS\_p.G12D}
+		child {node [treenode] {FLT3-ITD}
+			child {node [sizenode={red!50}{0.7360533620517851cm}] {468}}
+		}
+		child {node [sizenode={blue!50}{2.4594316186372973cm}] {3164}}
+	}
+	child {node [treenode] {PTPN11\_p.A72V}
+		child {node [sizenode={green!50}{0.5718317323851898cm}] {342}}
+	};
+
+\node [left=1cm of root] {\textbf{AML-35-001}};
+
+
+        \end{tikzpicture}
+        \end{document}
+        
